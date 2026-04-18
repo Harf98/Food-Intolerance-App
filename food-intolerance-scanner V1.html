@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="FoodScan">
+  <meta name="description" content="Food intolerance ingredient scanner">
+  <title>FoodScan — Intolerance Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f7f6f2;
+      --surface: #ffffff;
+      --border: rgba(0,0,0,0.08);
+      --border-mid: rgba(0,0,0,0.14);
+      --text: #1a1a18;
+      --text-secondary: #6b6b63;
+      --text-hint: #a0a097;
+      --blue: #1a5cff;
+      --blue-bg: #eef2ff;
+      --blue-text: #1a3db8;
+      --green: #18a058;
+      --green-bg: #e8f5ee;
+      --green-text: #0f6b38;
+      --amber: #d97706;
+      --amber-bg: #fef3e2;
+      --amber-text: #92520a;
+      --orange: #ea580c;
+      --orange-bg: #fff0e8;
+      --orange-text: #9a3510;
+      --red: #dc2626;
+      --red-bg: #fef0f0;
+      --red-text: #991b1b;
+      --radius: 14px;
+      --radius-sm: 8px;
+      --radius-pill: 100px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04);
+      --nav-height: 70px;
+      --topbar-height: 58px;
+      --font: 'DM Sans', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111110;
+        --surface: #1c1c1a;
+        --border: rgba(255,255,255,0.07);
+        --border-mid: rgba(255,255,255,0.12);
+        --text: #f0efe9;
+        --text-secondary: #8b8b80;
+        --text-hint: #555550;
+        --blue: #4d80ff;
+        --blue-bg: #0d1a3d;
+        --blue-text: #93b3ff;
+        --green: #34c878;
+        --green-bg: #0b2219;
+        --green-text: #6ee0a0;
+        --amber: #f5a623;
+        --amber-bg: #2a1d08;
+        --amber-text: #f5c06a;
+        --orange: #f97316;
+        --orange-bg: #2a1408;
+        --orange-text: #fdba74;
+        --red: #f87171;
+        --red-bg: #2a0f0f;
+        --red-text: #fca5a5;
+        --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+      height: 100%;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    #app {
+      max-width: 430px;
+      margin: 0 auto;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      animation: fadeIn 0.18s ease;
+    }
+    .screen.active { display: flex; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    .topbar {
+      height: var(--topbar-height);
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 10;
+    }
+
+    .topbar h1 {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text);
+      flex: 1;
+      letter-spacing: -0.01em;
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--blue);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 0;
+      font-family: var(--font);
+    }
+
+    .back-btn svg { width: 16px; height: 16px; }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 16px calc(var(--nav-height) + 16px);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .content.no-nav { padding-bottom: 24px; }
+
+    /* Nav */
+    .nav {
+      height: var(--nav-height);
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: var(--font);
+      padding: 8px;
+      position: relative;
+    }
+
+    .nav-btn .nav-icon {
+      width: 26px;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-btn .nav-icon svg { width: 22px; height: 22px; stroke: var(--text-hint); transition: stroke 0.15s; }
+    .nav-btn.active .nav-icon svg { stroke: var(--blue); }
+    .nav-btn span { font-size: 11px; font-weight: 500; color: var(--text-hint); transition: color 0.15s; }
+    .nav-btn.active span { color: var(--blue); }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    /* Severity pills */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .pill-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .sev-0 { background: var(--green-bg); color: var(--green-text); }
+    .sev-0 .pill-dot { background: var(--green); }
+    .sev-1 { background: var(--amber-bg); color: var(--amber-text); }
+    .sev-1 .pill-dot { background: var(--amber); }
+    .sev-2 { background: var(--orange-bg); color: var(--orange-text); }
+    .sev-2 .pill-dot { background: var(--orange); }
+    .sev-3 { background: var(--red-bg); color: var(--red-text); }
+    .sev-3 .pill-dot { background: var(--red); }
+
+    /* Intolerance list rows */
+    .int-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .int-row:last-child { border-bottom: none; }
+    .int-name { font-size: 15px; font-weight: 500; }
+    .int-actions { display: flex; align-items: center; gap: 8px; }
+
+    .del-btn {
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      background: none; border: none; cursor: pointer;
+      color: var(--text-hint); border-radius: 6px;
+      transition: background 0.12s, color 0.12s;
+    }
+    .del-btn:hover { background: var(--red-bg); color: var(--red); }
+    .del-btn svg { width: 14px; height: 14px; }
+
+    /* Inputs */
+    input[type=text], input[type=password], textarea, select {
+      width: 100%;
+      padding: 11px 13px;
+      border: 1px solid var(--border-mid);
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-family: var(--font);
+      background: var(--surface);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input[type=text]:focus, input[type=password]:focus, textarea:focus, select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(26,92,255,0.1);
+    }
+
+    textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b63' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+      cursor: pointer;
+    }
+
+    /* Buttons */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      width: 100%;
+      padding: 13px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 500;
+      font-family: var(--font);
+      cursor: pointer;
+      border: 1px solid var(--border-mid);
+      background: var(--surface);
+      color: var(--text);
+      transition: background 0.12s, transform 0.1s;
+      text-decoration: none;
+      margin-bottom: 8px;
+    }
+
+    .btn:active { transform: scale(0.98); }
+    .btn:hover { background: var(--bg); }
+
+    .btn-primary {
+      background: var(--blue);
+      border-color: var(--blue);
+      color: #fff;
+    }
+    .btn-primary:hover { background: #1449d9; border-color: #1449d9; }
+
+    .btn-sm {
+      width: auto;
+      padding: 7px 13px;
+      font-size: 13px;
+      margin-bottom: 0;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-danger { color: var(--red); border-color: rgba(220,38,38,0.2); }
+    .btn-danger:hover { background: var(--red-bg); }
+
+    .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 1.5px dashed var(--border-mid);
+      border-radius: var(--radius);
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      margin-bottom: 14px;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+    }
+    .upload-zone:hover { border-color: var(--blue); background: var(--blue-bg); }
+    .upload-zone .upload-icon { font-size: 32px; margin-bottom: 8px; display: block; }
+    .upload-zone p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+    .upload-zone p strong { color: var(--blue); }
+
+    .preview-img {
+      width: 100%;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+      display: none;
+      max-height: 200px;
+      object-fit: cover;
+    }
+
+    /* Tabs */
+    .tab-row {
+      display: flex;
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      margin-bottom: 16px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 8px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 6px;
+      color: var(--text-secondary);
+      transition: background 0.12s, color 0.12s;
+    }
+
+    .tab.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: var(--shadow);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Scanner */
+    .scanner-frame {
+      background: #0d0d0b;
+      border-radius: var(--radius);
+      height: 230px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 14px;
+      cursor: pointer;
+    }
+
+    .scanner-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .scanner-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .scanner-overlay svg { width: 40px; height: 40px; opacity: 0.35; }
+
+    .scanner-overlay p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+      font-weight: 500;
+    }
+
+    .corner {
+      position: absolute;
+      width: 22px; height: 22px;
+      border-color: rgba(255,255,255,0.65);
+      border-style: solid;
+    }
+    .corner.tl { top: 12px; left: 12px; border-width: 2px 0 0 2px; border-radius: 3px 0 0 0; }
+    .corner.tr { top: 12px; right: 12px; border-width: 2px 2px 0 0; border-radius: 0 3px 0 0; }
+    .corner.bl { bottom: 12px; left: 12px; border-width: 0 0 2px 2px; border-radius: 0 0 0 3px; }
+    .corner.br { bottom: 12px; right: 12px; border-width: 0 2px 2px 0; border-radius: 0 0 3px 0; }
+
+    .scan-beam {
+      position: absolute;
+      left: 12px; right: 12px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #4d80ff, transparent);
+      display: none;
+      animation: beam 1.8s ease-in-out infinite;
+    }
+    @keyframes beam { 0%,100% { top: 18%; } 50% { top: 82%; } }
+
+    /* Status banners */
+    .banner {
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .banner svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .banner-safe { background: var(--green-bg); color: var(--green-text); }
+    .banner-caution { background: var(--amber-bg); color: var(--amber-text); }
+    .banner-avoid { background: var(--red-bg); color: var(--red-text); }
+    .banner-info { background: var(--blue-bg); color: var(--blue-text); }
+
+    /* Summary grid */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .summary-cell {
+      border-radius: var(--radius-sm);
+      padding: 10px 4px;
+      text-align: center;
+    }
+    .summary-cell .s-num { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+    .summary-cell .s-lbl { font-size: 11px; font-weight: 500; margin-top: 2px; opacity: 0.75; }
+    .sc-0 { background: var(--green-bg); color: var(--green-text); }
+    .sc-1 { background: var(--amber-bg); color: var(--amber-text); }
+    .sc-2 { background: var(--orange-bg); color: var(--orange-text); }
+    .sc-3 { background: var(--red-bg); color: var(--red-text); }
+
+    /* Result rows */
+    .result-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-row:last-child { border-bottom: none; }
+    .res-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+    .res-dot-0 { background: var(--green); }
+    .res-dot-1 { background: var(--amber); }
+    .res-dot-2 { background: var(--orange); }
+    .res-dot-3 { background: var(--red); }
+    .res-name { font-size: 15px; font-weight: 500; color: var(--text); }
+    .res-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid var(--border-mid);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      padding: 36px 20px;
+      color: var(--text-secondary);
+    }
+    .empty-icon {
+      width: 52px; height: 52px;
+      margin: 0 auto 12px;
+      background: var(--bg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .empty-icon svg { width: 26px; height: 26px; stroke: var(--text-hint); }
+    .empty p { font-size: 14px; line-height: 1.6; }
+
+    /* Manual row */
+    .manual-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: stretch;
+    }
+    .manual-row input { flex: 1; margin: 0; }
+    .manual-row select { width: 74px; margin: 0; }
+    .manual-row .del-btn { flex-shrink: 0; width: 40px; height: auto; border: 1px solid var(--border-mid); border-radius: var(--radius-sm); }
+
+    /* Legend */
+    .legend { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    /* Settings rows */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-label { font-size: 14px; font-weight: 500; }
+    .setting-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+    /* Notice */
+    .notice {
+      background: var(--blue-bg);
+      border: 1px solid rgba(26,92,255,0.15);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--blue-text);
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    /* Section label */
+    .section-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-hint);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin: 20px 0 8px;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: calc(var(--nav-height) + 12px);
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--text);
+      color: var(--surface);
+      padding: 10px 18px;
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      z-index: 100;
+      white-space: nowrap;
+      max-width: calc(100% - 32px);
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- PROFILE SCREEN -->
+  <div id="screen-profile" class="screen active">
+    <div class="topbar">
+      <h1>My intolerances</h1>
+      <button class="btn btn-sm" onclick="showScreen('screen-settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+    </div>
+    <div class="content">
+      <div id="api-notice" class="notice">
+        <strong>API key required</strong> — open Settings to add your Anthropic key. AI features will use demo data until then.
+      </div>
+
+      <div class="section-label">Your profile</div>
+      <div class="card">
+        <div id="profile-empty" class="empty">
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4" stroke-linecap="round"/></svg>
+          </div>
+          <p>No intolerances added yet.<br>Tap below to get started.</p>
+        </div>
+        <div id="intolerance-list"></div>
+      </div>
+
+      <button class="btn btn-primary" onclick="showScreen('screen-add')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+        Add / update intolerances
+      </button>
+
+      <div class="section-label">Severity guide</div>
+      <div class="card">
+        <div class="legend">
+          <span class="pill sev-0"><span class="pill-dot"></span>Level 0 — safe</span>
+          <span class="pill sev-1"><span class="pill-dot"></span>Level 1 — mild</span>
+          <span class="pill sev-2"><span class="pill-dot"></span>Level 2 — moderate</span>
+          <span class="pill sev-3"><span class="pill-dot"></span>Level 3 — avoid</span>
+        </div>
+      </div>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" onclick="showScreen('screen-profile')">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round"/></svg></span>
+        <span>Profile</span>
+      </button>
+      <button class="nav-btn" onclick="showScreen('screen-scan')">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M12 10h.01M17 10h.01M7 14h10" stroke-linecap="round"/></svg></span>
+        <span>Scanner</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ADD INTOLERANCES SCREEN -->
+  <div id="screen-add" class="screen">
+    <div class="topbar">
+      <button class="back-btn" onclick="showScreen('screen-profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </button>
+      <h1>Add intolerances</h1>
+    </div>
+    <div class="content no-nav">
+      <div class="tab-row">
+        <div class="tab active" onclick="switchTab('tab-photo')">Photo upload</div>
+        <div class="tab" onclick="switchTab('tab-manual')">Manual entry</div>
+      </div>
+
+      <div class="tab-panel active" id="tab-photo">
+        <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+          <span class="upload-icon">🖼️</span>
+          <p>Tap to upload a photo of your test results<br><strong>AI will extract the list automatically</strong></p>
+          <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+        </div>
+        <img id="preview-img" class="preview-img" alt="Preview">
+        <button class="btn btn-primary" id="extract-btn" onclick="extractFromImage()" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Extract intolerances with AI
+        </button>
+        <div id="extract-status"></div>
+      </div>
+
+      <div class="tab-panel" id="tab-manual">
+        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:14px;line-height:1.5;">Enter each food item and select its severity level (0 = safe, 3 = avoid).</p>
+        <div id="manual-entries"></div>
+        <button class="btn" onclick="addManualRow()" style="margin-bottom:16px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg>
+          Add row
+        </button>
+        <button class="btn btn-primary" onclick="saveManualEntries()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Save entries
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCANNER SCREEN -->
+  <div id="screen-scan" class="screen">
+    <div class="topbar"><h1>Ingredient scanner</h1></div>
+    <div class="content">
+      <div id="no-profile-warn" class="banner banner-avoid" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01" stroke-linecap="round"/></svg>
+        Add your intolerance profile first.
+      </div>
+
+      <div class="scanner-frame" id="scanner-frame" onclick="triggerScan()">
+        <img id="scan-preview" alt="Scanned ingredients">
+        <div class="scanner-overlay" id="scan-overlay">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M12 10h.01M17 10h.01M7 14h10" stroke-linecap="round"/></svg>
+          <p>Tap to photograph ingredients label</p>
+        </div>
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+        <div class="scan-beam" id="scan-beam"></div>
+        <input type="file" id="scan-input" accept="image/*" capture="environment" style="display:none" onchange="handleScanImage(event)">
+      </div>
+
+      <div id="scan-status"></div>
+
+      <div id="scan-results" style="display:none;">
+        <div class="summary-grid" id="result-summary"></div>
+        <div id="result-banner"></div>
+        <div class="section-label">Ingredient breakdown</div>
+        <div class="card" id="result-list"></div>
+        <button class="btn" onclick="resetScan()" style="margin-top:4px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 0 1 3.51 15" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Scan another product
+        </button>
+      </div>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn" onclick="showScreen('screen-profile')">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round"/></svg></span>
+        <span>Profile</span>
+      </button>
+      <button class="nav-btn active" onclick="showScreen('screen-scan')">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M12 10h.01M17 10h.01M7 14h10" stroke-linecap="round"/></svg></span>
+        <span>Scanner</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- SETTINGS SCREEN -->
+  <div id="screen-settings" class="screen">
+    <div class="topbar">
+      <button class="back-btn" onclick="showScreen('screen-profile')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </button>
+      <h1>Settings</h1>
+    </div>
+    <div class="content no-nav">
+      <div class="section-label">Anthropic API key</div>
+      <div class="card">
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5;">Get a free key at <strong style="color:var(--blue);">console.anthropic.com</strong>. It's stored only on this device and never sent anywhere except your proxy.</p>
+        <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." style="margin-bottom:10px;">
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;margin-top:4px;line-height:1.5;">Proxy URL — your Cloudflare Worker address:</p>
+        <input type="text" id="proxy-url-input" placeholder="https://your-worker.your-name.workers.dev" style="margin-bottom:10px;">
+        <button class="btn btn-primary" onclick="saveApiKey()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Save settings
+        </button>
+        <div id="key-status" style="font-size:13px;color:var(--text-secondary);margin-top:4px;min-height:18px;"></div>
+      </div>
+
+      <div class="section-label">Install as app</div>
+      <div class="card">
+        <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;">Open this page in <strong style="color:var(--text);">Chrome</strong> on your phone, tap the browser menu (⋮), and select <strong style="color:var(--text);">"Add to Home Screen"</strong> to install FoodScan as a native-style app.</p>
+      </div>
+
+      <div class="section-label">Data &amp; privacy</div>
+      <div class="card">
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;line-height:1.5;">All intolerance data is stored locally on this device only. Nothing is sent to any server except the Anthropic API when scanning.</p>
+        <button class="btn btn-danger" onclick="clearAllData()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke-linecap="round"/></svg>
+          Clear all data
+        </button>
+      </div>
+
+      <div class="section-label">About</div>
+      <div class="card">
+        <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;">FoodScan v1.0<br>Built with Claude AI.<br><br>Scan any product's ingredients label to check it against your personal intolerance profile in seconds.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const SEV_LABELS = ['Safe', 'Mild', 'Moderate', 'Avoid'];
+  const SEV_COLORS = ['var(--green)', 'var(--amber)', 'var(--orange)', 'var(--red)'];
+
+  let intolerances = [];
+  let apiKey = '';
+  let proxyUrl = '';
+  let uploadedImageData = null;
+  let scanImageData = null;
+
+  function init() {
+    try { intolerances = JSON.parse(localStorage.getItem('fi_intolerances') || '[]'); } catch(e) { intolerances = []; }
+    apiKey = localStorage.getItem('fi_api_key') || '';
+    proxyUrl = (localStorage.getItem('fi_proxy_url') || '').replace(/\/$/, '');
+    renderProfile();
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (id === 'screen-profile') renderProfile();
+    if (id === 'screen-scan') {
+      document.getElementById('no-profile-warn').style.display = intolerances.length === 0 ? 'flex' : 'none';
+    }
+    if (id === 'screen-settings') {
+      document.getElementById('api-key-input').value = apiKey;
+      document.getElementById('proxy-url-input').value = proxyUrl;
+    }
+    if (id === 'screen-add') {
+      const entries = document.getElementById('manual-entries');
+      if (entries.children.length === 0) addManualRow();
+    }
+  }
+
+  function switchTab(id) {
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.tab-panel');
+    tabs.forEach((t, i) => t.classList.toggle('active', ['tab-photo','tab-manual'][i] === id));
+    panels.forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function renderProfile() {
+    const empty = document.getElementById('profile-empty');
+    const list = document.getElementById('intolerance-list');
+    const notice = document.getElementById('api-notice');
+    if (notice) notice.style.display = apiKey ? 'none' : 'block';
+
+    if (intolerances.length === 0) {
+      empty.style.display = 'block';
+      list.innerHTML = '';
+      return;
+    }
+    empty.style.display = 'none';
+    const sorted = [...intolerances].sort((a, b) => b.severity - a.severity);
+    list.innerHTML = sorted.map((item, idx) => `
+      <div class="int-row">
+        <span class="int-name">${escHtml(item.name)}</span>
+        <div class="int-actions">
+          <span class="pill sev-${item.severity}"><span class="pill-dot"></span>Level ${item.severity}</span>
+          <button class="del-btn" onclick="deleteIntolerance(${intolerances.indexOf(item)})" title="Remove">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>`).join('');
+  }
+
+  function deleteIntolerance(idx) {
+    intolerances.splice(idx, 1);
+    saveIntolerances();
+    renderProfile();
+    toast('Removed');
+  }
+
+  function handleImageUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      uploadedImageData = ev.target.result.split(',')[1];
+      document.getElementById('preview-img').src = ev.target.result;
+      document.getElementById('preview-img').style.display = 'block';
+      document.getElementById('extract-btn').style.display = 'flex';
+      document.getElementById('extract-status').innerHTML = '';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function extractFromImage() {
+    const status = document.getElementById('extract-status');
+    if (!uploadedImageData) return;
+    status.innerHTML = '<div class="banner banner-info"><span class="spinner"></span>Extracting intolerances with AI...</div>';
+
+    if (!apiKey) {
+      await delay(1400);
+      const demo = [
+        {name:'Gluten',severity:3},{name:'Dairy',severity:2},{name:'Eggs',severity:2},
+        {name:'Soy',severity:1},{name:'Peanuts',severity:3},{name:'Tree nuts',severity:1},
+        {name:'Corn',severity:0},{name:'Tomatoes',severity:1},{name:'Shellfish',severity:3}
+      ];
+      mergeIntolerances(demo);
+      status.innerHTML = '<div class="banner banner-safe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>Demo: loaded 9 sample items. Add your API key in Settings for real extraction.</div>';
+      return;
+    }
+
+    if (!proxyUrl) {
+      status.innerHTML = '<div class="banner banner-avoid">Please set your Proxy URL in Settings first.</div>';
+      return;
+    }
+    try {
+      const res = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Api-Key': apiKey },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: uploadedImageData } },
+              { type: 'text', text: 'Extract all food intolerances from this test result image. Return ONLY a JSON array with no markdown, preamble, or explanation. Format: [{"name":"FoodName","severity":0}]. Severity: 0=no reaction, 1=mild, 2=moderate, 3=strong/avoid. If labels say low/medium/high/very high map to 1/2/2/3.' }
+            ]
+          }]
+        })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      const text = data.content.map(c => c.text || '').join('');
+      const clean = text.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
+      mergeIntolerances(parsed);
+      status.innerHTML = `<div class="banner banner-safe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>Found ${parsed.length} items. Go to Profile to review.</div>`;
+    } catch (err) {
+      status.innerHTML = `<div class="banner banner-avoid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01" stroke-linecap="round"/></svg>Error: ${escHtml(err.message)}</div>`;
+    }
+  }
+
+  function mergeIntolerances(newItems) {
+    newItems.forEach(item => {
+      const existing = intolerances.find(i => i.name.toLowerCase() === item.name.toLowerCase());
+      if (existing) existing.severity = item.severity;
+      else intolerances.push(item);
+    });
+    saveIntolerances();
+  }
+
+  function addManualRow() {
+    const container = document.getElementById('manual-entries');
+    const row = document.createElement('div');
+    row.className = 'manual-row';
+    row.innerHTML = `
+      <input type="text" placeholder="Food name (e.g. Gluten)">
+      <select>
+        <option value="0">0 — safe</option>
+        <option value="1">1 — mild</option>
+        <option value="2" selected>2 — mod.</option>
+        <option value="3">3 — avoid</option>
+      </select>
+      <button class="del-btn" onclick="this.closest('.manual-row').remove()" title="Remove">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>
+      </button>`;
+    container.appendChild(row);
+  }
+
+  function saveManualEntries() {
+    const rows = document.querySelectorAll('.manual-row');
+    const entries = [];
+    rows.forEach(row => {
+      const name = row.querySelector('input').value.trim();
+      const severity = parseInt(row.querySelector('select').value);
+      if (name) entries.push({ name, severity });
+    });
+    if (entries.length === 0) { toast('Enter at least one food item'); return; }
+    mergeIntolerances(entries);
+    toast(`Saved ${entries.length} item${entries.length > 1 ? 's' : ''}`);
+    showScreen('screen-profile');
+  }
+
+  function triggerScan() {
+    if (document.getElementById('scan-results').style.display !== 'none') return;
+    document.getElementById('scan-input').click();
+  }
+
+  function handleScanImage(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      scanImageData = ev.target.result.split(',')[1];
+      const preview = document.getElementById('scan-preview');
+      preview.src = ev.target.result;
+      preview.style.display = 'block';
+      document.getElementById('scan-overlay').style.display = 'none';
+      document.getElementById('scan-beam').style.display = 'block';
+      analyzeIngredients();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function analyzeIngredients() {
+    const status = document.getElementById('scan-status');
+    const resultsEl = document.getElementById('scan-results');
+    resultsEl.style.display = 'none';
+    status.innerHTML = '<div class="banner banner-info" style="margin-top:0"><span class="spinner"></span>Reading ingredients and checking your profile...</div>';
+
+    const profile = intolerances.map(i => `${i.name} (level ${i.severity})`).join(', ');
+
+    if (!apiKey) {
+      await delay(1600);
+      const demo = [
+        {ingredient:'Wheat flour',intolerance:'Gluten',severity:3,status:'found'},
+        {ingredient:'Milk powder',intolerance:'Dairy',severity:2,status:'found'},
+        {ingredient:'Soy lecithin',intolerance:'Soy',severity:1,status:'found'},
+        {ingredient:'Sugar',intolerance:null,severity:0,status:'clear'},
+        {ingredient:'Salt',intolerance:null,severity:0,status:'clear'},
+        {ingredient:'Sunflower oil',intolerance:null,severity:0,status:'clear'},
+        {ingredient:'Natural flavours',intolerance:null,severity:0,status:'clear'},
+      ];
+      showResults(demo, true);
+      status.innerHTML = '';
+      return;
+    }
+
+    if (!proxyUrl) {
+      status.innerHTML = '<div class="banner banner-avoid">Please set your Proxy URL in Settings first.</div>';
+      document.getElementById('scan-beam').style.display = 'none';
+      return;
+    }
+    try {
+      const res = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Api-Key': apiKey },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1200,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: scanImageData } },
+              { type: 'text', text: `Read every ingredient from this product label. Then check each against this intolerance profile: ${profile}. Return ONLY a JSON array, no markdown. Each object: {"ingredient":"name","intolerance":"matched name or null","severity":0-3,"status":"found" or "clear"}. List ALL ingredients. If an ingredient matches or is a form of an intolerance (e.g. wheat = gluten), flag it with the correct severity.` }
+            ]
+          }]
+        })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      const text = data.content.map(c => c.text || '').join('');
+      const clean = text.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
+      showResults(parsed, false);
+      status.innerHTML = '';
+    } catch (err) {
+      status.innerHTML = `<div class="banner banner-avoid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01" stroke-linecap="round"/></svg>Error: ${escHtml(err.message)}</div>`;
+      document.getElementById('scan-beam').style.display = 'none';
+    }
+  }
+
+  function showResults(results, isDemo) {
+    const resultsEl = document.getElementById('scan-results');
+    const summaryEl = document.getElementById('result-summary');
+    const bannerEl = document.getElementById('result-banner');
+    const listEl = document.getElementById('result-list');
+    document.getElementById('scan-beam').style.display = 'none';
+
+    const counts = [0, 0, 0, 0];
+    results.forEach(r => { if (r.severity >= 0 && r.severity <= 3) counts[r.severity]++; });
+
+    summaryEl.innerHTML = ['Safe','Mild','Moderate','Avoid'].map((lbl, i) =>
+      `<div class="summary-cell sc-${i}"><div class="s-num">${counts[i]}</div><div class="s-lbl">${lbl}</div></div>`
+    ).join('');
+
+    const maxSev = Math.max(...results.map(r => r.severity || 0));
+    if (maxSev === 0) {
+      bannerEl.innerHTML = '<div class="banner banner-safe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg>All clear — no intolerances detected in this product.</div>';
+    } else if (maxSev <= 2) {
+      bannerEl.innerHTML = '<div class="banner banner-caution"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01" stroke-linecap="round"/></svg>Caution — contains ingredients that may cause mild or moderate reactions.</div>';
+    } else {
+      bannerEl.innerHTML = '<div class="banner banner-avoid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93l14.14 14.14" stroke-linecap="round"/></svg>Avoid — this product contains ingredients you should not eat.</div>';
+    }
+
+    if (isDemo) {
+      bannerEl.innerHTML += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;padding:0 2px;">Demo mode — add your API key in Settings for real scanning.</div>';
+    }
+
+    const sorted = [...results].sort((a, b) => (b.severity || 0) - (a.severity || 0));
+    listEl.innerHTML = sorted.map(r => `
+      <div class="result-row">
+        <div class="res-dot res-dot-${r.severity || 0}"></div>
+        <div>
+          <div class="res-name">${escHtml(r.ingredient)}</div>
+          <div class="res-sub">${r.intolerance
+            ? `Matches <strong>${escHtml(r.intolerance)}</strong> — Level ${r.severity} (${SEV_LABELS[r.severity]})`
+            : 'No match — clear'
+          }</div>
+        </div>
+      </div>`).join('');
+
+    resultsEl.style.display = 'block';
+  }
+
+  function resetScan() {
+    document.getElementById('scan-results').style.display = 'none';
+    document.getElementById('scan-preview').style.display = 'none';
+    document.getElementById('scan-overlay').style.display = 'flex';
+    document.getElementById('scan-beam').style.display = 'none';
+    document.getElementById('scan-status').innerHTML = '';
+    document.getElementById('scan-input').value = '';
+    scanImageData = null;
+  }
+
+  function saveApiKey() {
+    const val = document.getElementById('api-key-input').value.trim();
+    const proxy = document.getElementById('proxy-url-input').value.trim().replace(/\/$/, '');
+    apiKey = val;
+    proxyUrl = proxy;
+    localStorage.setItem('fi_api_key', val);
+    localStorage.setItem('fi_proxy_url', proxy);
+    document.getElementById('api-notice') && (document.getElementById('api-notice').style.display = (val && proxy) ? 'none' : 'block');
+    toast('Settings saved');
+    document.getElementById('key-status').textContent = 'Settings saved successfully.';
+    setTimeout(() => { document.getElementById('key-status').textContent = ''; }, 3000);
+  }
+
+  function clearAllData() {
+    if (!confirm('Delete all intolerances and settings? This cannot be undone.')) return;
+    localStorage.removeItem('fi_intolerances');
+    localStorage.removeItem('fi_api_key');
+    intolerances = [];
+    apiKey = '';
+    renderProfile();
+    showScreen('screen-profile');
+    toast('All data cleared');
+  }
+
+  function saveIntolerances() {
+    localStorage.setItem('fi_intolerances', JSON.stringify(intolerances));
+  }
+
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2200);
+  }
+
+  function escHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  init();
+</script>
+</body>
+</html>
